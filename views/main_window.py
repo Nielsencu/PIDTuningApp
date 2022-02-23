@@ -1,10 +1,32 @@
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize,pyqtSlot, QRunnable, QThreadPool, QTimer
 from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 
 from .controller_input import ControllerInput
+from .graph import CustomGraph
+from server import Comms    
 
-from pyqtgraph import PlotWidget, plot
-import pyqtgraph as pg
+
+class Worker(QRunnable):
+    '''
+    Worker thread
+
+    :param args: Arguments to make available to the run code
+    :param kwargs: Keywords arguments to make available to the run code
+
+    '''
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+
+    @pyqtSlot()
+    def run(self):
+        '''
+        Initialise the runner function with passed args, kwargs.
+        '''
+        self.fn(*self.args, **self.kwargs)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -31,20 +53,12 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout()
         right_layout.setAlignment(Qt.AlignTop)
 
-
-        hour = [1,2,3,4,5,6,7,8,9,10]
-        temperature = [30,32,34,32,33,31,29,32,35,45]
-        self.graphWidget1 = pg.PlotWidget()
-        self.graphWidget2 = pg.PlotWidget()
-        pen = pg.mkPen(color=(255, 0, 0))
-        self.graphWidget1.plot(hour, temperature,pen=pen)
-        self.graphWidget1.setTitle("Motor Position", color="b", size="30pt")
-        self.graphWidget2.plot(hour, temperature,pen=pen)
-        self.graphWidget2.setTitle("Motor RPM", color="b", size="30pt")
-        self.graphWidget1.setBackground('w')
-        self.graphWidget2.setBackground('w')
-        right_layout.addWidget(self.graphWidget1)
-        right_layout.addWidget(self.graphWidget2)
+        self.comms = None
+        vars = self.init_graph_thread()
+        self.graphs = [CustomGraph(name) for name in vars]
+        self.comms.graphs = self.graphs
+        for graph in self.graphs:
+            right_layout.addWidget(graph)
 
         layout.addLayout(left_layout,stretch=1)
         layout.addLayout(right_layout,stretch=1)
@@ -52,3 +66,15 @@ class MainWindow(QMainWindow):
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
+
+    def init_graph_thread(self):
+        self.comms = Comms()
+        self.header_msg = self.comms.receive_header()
+        while not(self.header_msg):
+            self.header_msg = self.comms.receive_header()
+        self.timer = QTimer()
+        self.timer.setInterval(50)
+        self.timer.timeout.connect(self.comms.receive_data)
+        self.timer.start()
+        return self.header_msg
+
