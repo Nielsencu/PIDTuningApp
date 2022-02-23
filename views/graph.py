@@ -8,8 +8,6 @@ class CustomGraph(pg.PlotWidget):
         self.pen = pg.mkPen(color=(255, 0, 0))
         self.setTitle(name, color="b", size="30pt")
         self.setBackground('w')
-        #self.x = []
-        #self.y = []
         self.x = [i for i in range(1,101)]
         self.y = [random.randint(0,100) for i in range(0,100)]
         self.data_line = self.plot(self.x, self.y,pen=self.pen)

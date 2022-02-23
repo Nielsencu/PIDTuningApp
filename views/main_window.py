@@ -37,6 +37,7 @@ class MainWindow(QMainWindow):
 
         left_widgets = []
 
+        self.threadpool = QThreadPool()
         ctrl_inputs = [ControllerInput(controller_type +":") for controller_type in "PID"]
 
         for ctrl in ctrl_inputs:
@@ -54,12 +55,12 @@ class MainWindow(QMainWindow):
         right_layout.setAlignment(Qt.AlignTop)
 
         self.comms = None
-        vars = self.init_graph_thread()
+        vars = self.init_receive_thread()
         self.graphs = [CustomGraph(name) for name in vars]
         self.comms.graphs = self.graphs
         for graph in self.graphs:
             right_layout.addWidget(graph)
-
+        
         layout.addLayout(left_layout,stretch=1)
         layout.addLayout(right_layout,stretch=1)
 
@@ -67,7 +68,7 @@ class MainWindow(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-    def init_graph_thread(self):
+    def init_receive_thread(self):
         self.comms = Comms()
         self.header_msg = self.comms.receive_header()
         while not(self.header_msg):
@@ -77,4 +78,8 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.comms.receive_data)
         self.timer.start()
         return self.header_msg
+
+    def init_transfer_thread(self):
+        #worker = 
+        return
 
