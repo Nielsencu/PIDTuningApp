@@ -2,6 +2,8 @@ from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
 import random
 
+    
+
 class CustomGraph(pg.PlotWidget):
     def __init__(self, name):
         super().__init__()
@@ -12,10 +14,10 @@ class CustomGraph(pg.PlotWidget):
         self.y = [random.randint(0,100) for i in range(0,100)]
         self.data_line = self.plot(self.x, self.y,pen=self.pen)
 
-    def setPen(self, pen):
+    def set_pen(self, pen):
         self.pen = pg.mkPen(color=pen)
 
-    def updatePlotData(self, newPoint):
+    def update_plot(self, newPoint):
         self.x = self.x[1:]
         self.x.append(self.x[-1] + 1)
 

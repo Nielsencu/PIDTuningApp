@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 
 from .controller_input import ControllerInput
 from .graph import CustomGraph
-from server import Comms    
+from server import SerialConnection    
 
 
 class Worker(QRunnable):
@@ -54,10 +54,9 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout()
         right_layout.setAlignment(Qt.AlignTop)
 
-        self.comms = None
+        self.conn = None
         vars = self.init_receive_thread()
         self.graphs = [CustomGraph(name) for name in vars]
-        self.comms.graphs = self.graphs
         for graph in self.graphs:
             right_layout.addWidget(graph)
         
@@ -69,13 +68,13 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def init_receive_thread(self):
-        self.comms = Comms()
-        self.header_msg = self.comms.receive_header()
+        self.conn = SerialConnection()
+        self.header_msg = self.conn.receive_header()
         while not(self.header_msg):
-            self.header_msg = self.comms.receive_header()
+            self.header_msg = self.conn.receive_header()
         self.timer = QTimer()
         self.timer.setInterval(50)
-        self.timer.timeout.connect(self.comms.receive_data)
+        self.timer.timeout.connect(self.conn.receive_data)
         self.timer.start()
         return self.header_msg
 
