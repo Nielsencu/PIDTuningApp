@@ -5,12 +5,12 @@ from .components.input_box import InputBox
 
 import sys
 sys.path.insert(0,'..')
+sys.path.insert(1,'.')
 
 from server import SerialConnection    
-from graph_view import CustomGraph
-from controllers import GraphController
-from models import GraphModel
-from views import GraphView
+from controllers.graph_controller import GraphController, GraphFactory
+from models.graph_model import GraphModel
+from .graph_view import GraphView
 
 class Worker(QRunnable):
     '''
@@ -62,9 +62,8 @@ class MainWindow(QMainWindow):
 
         self.conn = None
         vars = self.init_receive_thread()
-        self.graphs = [GraphController(GraphView(name), GraphModel(name)) for name in vars]
         for graph in self.graphs:
-            right_layout.addWidget(graph)
+            right_layout.addWidget(graph.get_view())
         
         layout.addLayout(left_layout,stretch=1)
         layout.addLayout(right_layout,stretch=1)
@@ -74,15 +73,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def init_receive_thread(self):
-        self.conn = SerialConnection()
-        self.header_msg = self.conn.receive_header()
-        while not(self.header_msg):
-            self.header_msg = self.conn.receive_header()
+        self.conn = SerialConnection('COM4')
+        header_msg = self.conn.receive_header()
+        while not(header_msg):
+            header_msg = self.conn.receive_header()
+        self.graphs = GraphFactory().create_graph_controllers(((GraphView(), GraphModel(name)) for name in header_msg)).build()
+        self.conn.setup_graph(self.graphs)
         self.timer = QTimer()
         self.timer.setInterval(50)
         self.timer.timeout.connect(self.conn.receive_data)
         self.timer.start()
-        return self.header_msg
 
     def init_transfer_thread(self):
         #worker = 
