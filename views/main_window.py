@@ -1,10 +1,16 @@
 from PyQt5.QtCore import Qt, QSize,pyqtSlot, QRunnable, QThreadPool, QTimer
 from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 
-from .controller_input import ControllerInput
-from .graph import CustomGraph
-from server import SerialConnection    
+from .components.input_box import InputBox
 
+import sys
+sys.path.insert(0,'..')
+
+from server import SerialConnection    
+from graph_view import CustomGraph
+from controllers import GraphController
+from models import GraphModel
+from views import GraphView
 
 class Worker(QRunnable):
     '''
@@ -38,7 +44,7 @@ class MainWindow(QMainWindow):
         left_widgets = []
 
         self.threadpool = QThreadPool()
-        ctrl_inputs = [ControllerInput(controller_type +":") for controller_type in "PID"]
+        ctrl_inputs = [InputBox(controller_type +":") for controller_type in "PID"]
 
         for ctrl in ctrl_inputs:
             for w in ctrl.widgets:
@@ -56,7 +62,7 @@ class MainWindow(QMainWindow):
 
         self.conn = None
         vars = self.init_receive_thread()
-        self.graphs = [CustomGraph(name) for name in vars]
+        self.graphs = [GraphController(GraphView(name), GraphModel(name)) for name in vars]
         for graph in self.graphs:
             right_layout.addWidget(graph)
         
